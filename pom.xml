@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <!-- Version du modèle de projet POM -->
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Définition du parent du projet, ici c'est Spring Boot        -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.6</version>
+        <relativePath/> <!-- Recherche le parent dans le dépôt -->
+    </parent>
+
+    <!-- Informations sur le projet -->
+    <groupId>com.example</groupId> <!-- Identifiant du groupe de votre projet -->
+    <artifactId>beestore</artifactId> <!-- Identifiant de l'artéfact (le nom de votre projet) -->
+    <version>0.0.1-SNAPSHOT</version> <!-- Version du projet -->
+    <name>beestore</name> <!-- Nom du projet -->
+    <description>beestore</description> <!-- Description du projet -->
+    <url/> <!-- URL du projet (optionnel) -->
+
+    <!-- Licences et développeurs -->
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <scm> <!-- Configuration pour le contrôle de version (SCM) -->
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
+
+    <!-- Propriétés spécifiques au projet, ici la version de Java utilisée -->
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <!-- Dépendances nécessaires pour le projet -->
+    <dependencies>
+        <!-- Dépendance pour Spring Data JPA (utilisé pour l'accès aux bases de données relationnelles) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Dépendance pour Spring Web (pour la création de RESTful APIs) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Dépendance pour Spring Boot DevTools (outil pour le développement rapide, redémarre l'application automatiquement) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope> <!-- Ne s'active qu'en temps d'exécution -->
+            <optional>true</optional> <!-- Dépendance optionnelle -->
+        </dependency>
+
+        <!-- Dépendance pour Lombok (génère automatiquement des méthodes comme les getters/setters) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional> <!-- Lombok n'est pas nécessaire à l'exécution -->
+        </dependency>
+
+        <!-- Dépendance pour les tests avec Spring Boot (tests unitaires et d'intégration) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope> <!-- Ne s'active que pendant les tests -->
+        </dependency>
+
+        <!-- Dépendance pour intégrer OpenAPI avec Spring Boot (permet de générer une documentation API) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.5.0</version> <!-- Version de la dépendance -->
+        </dependency>
+
+        <!-- Dépendance pour le connecteur MySQL (pour la connexion à une base de données MySQL) -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope> <!-- Ne s'active qu'à l'exécution -->
+        </dependency>
+
+        <!-- Dépendance pour la base de données H2 en mémoire (utile pour les tests) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.4.200</version> <!-- Dernière version stable -->
+            <scope>runtime</scope> <!-- Ne s'active qu'à l'exécution -->
+        </dependency>
+
+        <!-- Cucumber Core -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>7.11.0</version> <!-- ou la dernière version disponible -->
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Cucumber Spring support -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-spring</artifactId>
+            <version>7.11.0</version> <!-- ou la dernière version disponible -->
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Cucumber JUnit 5 runner -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>7.11.0</version> <!-- ou la dernière version disponible -->
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- Configuration de la phase de construction du projet -->
+    <build>
+        <plugins>
+            <!-- Plugin de compilation pour Java (permet d'utiliser Lombok et de compiler avec Java 17) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>17</source> <!-- Version de Java pour la compilation -->
+                    <target>17</target> <!-- Version cible de Java pour l'exécution -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <!-- Plugin Spring Boot pour la gestion des dépendances et de la construction du projet -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId> <!-- Exclure Lombok du packaging final -->
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>
