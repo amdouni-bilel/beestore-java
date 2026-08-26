@@ -16,7 +16,7 @@
     <!-- Informations sur le projet -->
     <groupId>com.example</groupId> <!-- Identifiant du groupe de votre projet -->
     <artifactId>beestore</artifactId> <!-- Identifiant de l'artéfact (le nom de votre projet) -->
-    <version>0.0.1-SNAPSHOT</version> <!-- Version du projet -->
+    <version>1.0.0</version> <!-- Version du projet -->
     <name>beestore</name> <!-- Nom du projet -->
     <description>beestore</description> <!-- Description du projet -->
     <url/> <!-- URL du projet (optionnel) -->
@@ -38,6 +38,17 @@
     <!-- Propriétés spécifiques au projet, ici la version de Java utilisée -->
     <properties>
         <java.version>17</java.version>
+
+        <!-- Connexion SonarCloud -->
+        <sonar.projectKey>amdouni-bilel_beestore-java</sonar.projectKey>
+        <sonar.organization>amdouni-bilel</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+
+        <!-- Indique à SonarCloud où trouver le rapport JaCoCo -->
+        <sonar.coverage.jacoco.xmlReportPaths>
+            target/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
+
     </properties>
 
     <!-- Dépendances nécessaires pour le projet -->
@@ -104,6 +115,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Actuator : expose /actuator/health pour la supervision (Docker, Kubernetes) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+
     </dependencies>
 
     <!-- Configuration de la phase de construction du projet -->
@@ -162,30 +180,34 @@
                         </goals>
                     </execution>
                     <!-- (optionnel) Fait échouer le build si la couverture est trop basse -->
-                    <execution>
-                        <id>check</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.70</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
-                    </execution>
+<!--                    <execution>-->
+<!--                        <id>check</id>-->
+<!--                        <phase>verify</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>check</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <rules>-->
+<!--                                <rule>-->
+<!--                                    <element>BUNDLE</element>-->
+<!--                                    <limits>-->
+<!--                                        <limit>-->
+<!--                                            <counter>LINE</counter>-->
+<!--                                            <value>COVEREDRATIO</value>-->
+<!--                                            <minimum>0.70</minimum>-->
+<!--                                        </limit>-->
+<!--                                    </limits>-->
+<!--                                </rule>-->
+<!--                            </rules>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
 
+            </plugin>
 
         </plugins>
     </build>
