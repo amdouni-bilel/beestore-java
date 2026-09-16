@@ -1,0 +1,38 @@
+# ---- Étape 1 : build ----
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
+
+WORKDIR /build
+
+# Copie uniquement le pom.xml d'abord :
+# la couche de dépendances
+# n'est reconstruite que si pom.xml change (cache Docker)
+COPY pom.xml .
+
+RUN mvn dependency:go-offline -B
+
+# Copie le code source et compile
+COPY src ./src
+
+RUN mvn clean package -DskipTests
+
+
+# ---- Étape 2 : exécution (image finale, très légère) ----
+FROM eclipse-temurin:17-jre-alpine
+
+# Utilisateur non-root : bonne pratique Docker (voir cours 1.3)
+RUN addgroup -S beestore && adduser -S beestore -G beestore
+
+WORKDIR /app
+
+COPY --from=builder /build/target/beestore-1.0.0.jar app.jar
+
+RUN chown beestore:beestore app.jar
+
+USER beestore
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
