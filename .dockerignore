@@ -1,0 +1,11 @@
+.git
+.gitignore
+.idea
+*.md
+.mvn
+mvnw
+mvnw.cmd
+target/*.jar.original
+target/site
+target/test-classes
+target/classes

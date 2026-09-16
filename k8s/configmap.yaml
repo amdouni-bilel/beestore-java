@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: gestion-produits
+data:
+  MYSQL_HOST: mysql-service
+  MYSQL_DATABASE: produits_db
