@@ -1,4 +1,5 @@
 pipeline {
+
     agent any
 
     tools {
@@ -7,8 +8,8 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE   = 'beestore'
-        DOCKER_TAG     = "${BUILD_NUMBER}"
+        DOCKER_IMAGE = 'beestore'
+        DOCKER_TAG = "${BUILD_NUMBER}"
         SONAR_HOST_URL = 'https://sonarcloud.io'
     }
 
@@ -30,6 +31,7 @@ pipeline {
             steps {
                 sh 'mvn test'
             }
+
             post {
                 always {
                     junit 'target/surefire-reports/*.xml'
@@ -37,19 +39,23 @@ pipeline {
             }
         }
 
-        stage('Couverture & Qualité (SonarCloud)') {
+        stage('Couverture & Qualite (SonarCloud)') {
+
             environment {
                 SONAR_TOKEN = credentials('SONAR_TOKEN')
             }
+
             steps {
+
                 sh '''
-                    mvn verify sonar:sonar \
-                      -Dsonar.projectKey=beedigital_beestore \
-                      -Dsonar.organization=beedigital \
-                      -Dsonar.host.url=$SONAR_HOST_URL \
-                      -Dsonar.token=$SONAR_TOKEN \
-                      -Dsonar.qualitygate.wait=true
+                mvn verify sonar:sonar \
+                -Dsonar.projectKey=amdouni-bilel_beestore-java \
+                -Dsonar.organization=amdouni-bilel \
+                -Dsonar.host.url=$SONAR_HOST_URL \
+                -Dsonar.token=$SONAR_TOKEN \
+                -Dsonar.qualitygate.wait=true
                 '''
+
             }
         }
 
@@ -60,38 +66,53 @@ pipeline {
         }
 
         stage('Docker Build') {
+
             steps {
+
                 sh """
-                    docker build -f Dockerfile.multistage \
-                      -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                      -t ${DOCKER_IMAGE}:latest .
+                docker build -f Dockerfile.multistage \
+                -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                -t ${DOCKER_IMAGE}:latest .
                 """
+
             }
         }
 
         stage('Docker Push') {
+
             steps {
-                withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                )]) {
+
+                withCredentials([
+                        usernamePassword(
+                                credentialsId: 'dockerhub-credentials',
+                                usernameVariable: 'DOCKER_USER',
+                                passwordVariable: 'DOCKER_PASS'
+                        )
+                ]) {
+
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} \$DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}"
-                    sh "docker tag ${DOCKER_IMAGE}:latest \$DOCKER_USER/${DOCKER_IMAGE}:latest"
-                    sh "docker push \$DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}"
-                    sh "docker push \$DOCKER_USER/${DOCKER_IMAGE}:latest"
+
+                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} $DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}"
+
+                    sh "docker tag ${DOCKER_IMAGE}:latest $DOCKER_USER/${DOCKER_IMAGE}:latest"
+
+                    sh "docker push $DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}"
+
+                    sh "docker push $DOCKER_USER/${DOCKER_IMAGE}:latest"
+
                 }
             }
         }
     }
 
     post {
+
         success {
-            echo 'Pipeline SUCCESS : BeeStore construit, testé, analysé et publié.'
+            echo 'Pipeline SUCCESS : BeeStore construit, teste, analyse et publie.'
         }
+
         failure {
-            echo 'Pipeline FAILED : voir Console Output pour le détail.'
+            echo 'Pipeline FAILED : voir Console Output pour le detail.'
         }
     }
 }
