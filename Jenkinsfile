@@ -8,7 +8,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = 'beestore'
+        DOCKER_IMAGE = 'amdounibilel/beestore'
         DOCKER_TAG = "${BUILD_NUMBER}"
         SONAR_HOST_URL = 'https://sonarcloud.io'
     }
@@ -70,7 +70,8 @@ pipeline {
             steps {
 
                 sh """
-                docker build -f Dockerfile.multistage \
+                docker build \
+                -f Dockerfile.multistage \
                 -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
                 -t ${DOCKER_IMAGE}:latest .
                 """
@@ -84,21 +85,23 @@ pipeline {
 
                 withCredentials([
                         usernamePassword(
-                                credentialsId: 'dockerhub-credentials',
+                                credentialsId: '83c3aab9-a1c3-4e58-afb1-dcb5eb957d8c',
                                 usernameVariable: 'DOCKER_USER',
                                 passwordVariable: 'DOCKER_PASS'
                         )
                 ]) {
 
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    '''
 
-                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} $DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    sh """
+                    docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    """
 
-                    sh "docker tag ${DOCKER_IMAGE}:latest $DOCKER_USER/${DOCKER_IMAGE}:latest"
-
-                    sh "docker push $DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}"
-
-                    sh "docker push $DOCKER_USER/${DOCKER_IMAGE}:latest"
+                    sh """
+                    docker push ${DOCKER_IMAGE}:latest
+                    """
 
                 }
             }
