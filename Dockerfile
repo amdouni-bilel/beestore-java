@@ -19,3 +19,5 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
 # Ajout d'un commentaire pour lancer pipeline github actions
+
+# ceci un autre commentaire pour lancer pipeline github actions 
