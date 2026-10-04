@@ -1,28 +1,110 @@
+# Nom du workflow, affiché dans l'onglet "Actions" de GitHub et dans le badge
 name: CI BeeStore
 
+# Déclencheurs : quand ce workflow doit-il démarrer ?
 on:
-  push:
-    branches:
-      - main
+  push:                                  # à chaque push...
+    branches: [ main ]                   # ...sur la branche main uniquement
+  pull_request:                          # à chaque pull request...
+    branches: [ main ]                   # ...qui cible la branche main
 
-  pull_request:
-    branches:
-      - main
-
+# Liste des jobs. Sans "needs", des jobs s'exécutent en parallèle
 jobs:
-  build-test:
-    name: Build & Test
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout du code
-        uses: actions/checkout@v4
+  # ---------------------------------------------------------------------------
+  # JOB 1 : compiler, tester, analyser la qualité, publier les artifacts
+  # ---------------------------------------------------------------------------
+  build-test:                            # identifiant du job (référencé par "needs")
+    name: Build & Test                   # nom lisible affiché dans l'interface GitHub
+    runs-on: ubuntu-latest               # runner hébergé par GitHub (machine Linux neuve)
+    steps:                               # étapes exécutées l'une après l'autre
 
-      - name: Installer JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+      # Récupérer le code du dépôt sur le runner
+      - name: Checkout du code           # libellé de l'étape dans les logs
+        uses: actions/checkout@v4        # Action officielle de clonage du dépôt
+        with:                            # paramètres de l'Action
+          fetch-depth: 0                 # historique complet (sinon clone "shallow") : requis par SonarCloud
 
-      - name: Build et exécution des tests
-        run: mvn -B clean verify
+      # Installer Java et activer le cache des dépendances Maven
+      - name: Installer JDK 17           # libellé de l'étape
+        uses: actions/setup-java@v4      # Action officielle d'installation d'un JDK
+        with:                            # paramètres de l'Action
+          distribution: 'temurin'        # distribution du JDK (Eclipse Temurin, comme dans le Dockerfile)
+          java-version: '17'             # version de Java utilisée par BeeStore
+          cache: 'maven'                 # met en cache ~/.m2, clé calculée à partir du hash de pom.xml
+
+      # Compiler, exécuter les tests et générer le rapport JaCoCo
+      - name: Build et exécution des tests   # libellé de l'étape
+        run: mvn -B clean verify         # -B : mode batch (logs propres) ; clean : repart de zéro ; verify : compile + tests + JaCoCo
+
+      # Envoyer les résultats à SonarCloud et attendre le verdict du Quality Gate
+      - name: Analyse SonarCloud         # libellé de l'étape
+        env:                             # variables d'environnement visibles par cette étape seulement
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # token lu depuis les Secrets GitHub, jamais écrit en clair
+        # ATTENTION : dans un bloc ">" les lignes # sont du contenu, pas des commentaires.
+        # Les options sont donc expliquées ici, au-dessus de la commande :
+        #   sonar:sonar                   -> lance l'analyse (réutilise target/classes et le rapport JaCoCo déjà générés)
+        #   -Dsonar.projectKey=...        -> identifiant du projet dans SonarCloud
+        #   -Dsonar.organization=...      -> organisation SonarCloud propriétaire du projet
+        #   -Dsonar.host.url=...          -> adresse du serveur SonarCloud
+        #   -Dsonar.qualitygate.wait=true -> attend le verdict ; le pipeline échoue si le Quality Gate est rouge
+        run: >
+          mvn -B sonar:sonar
+          -Dsonar.projectKey=amdouni-bilel_beestore
+          -Dsonar.organization=amdouni-bilel
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.qualitygate.wait=true
+
+      # Conserver le JAR produit pour pouvoir le télécharger depuis GitHub
+      - name: Publier le .jar            # libellé de l'étape
+        uses: actions/upload-artifact@v4 # Action officielle de publication d'artifacts
+        with:                            # paramètres de l'Action
+          name: beestore-jar             # nom de l'artifact dans l'onglet Actions
+          path: target/*.jar             # fichier(s) à publier (le .jar.original n'est pas inclus)
+
+      # Conserver le rapport de couverture JaCoCo
+      - name: Publier le rapport JaCoCo  # libellé de l'étape
+        if: always()                     # s'exécute même si une étape précédente a échoué
+        uses: actions/upload-artifact@v4 # même Action de publication
+        with:                            # paramètres de l'Action
+          name: jacoco-report            # nom de l'artifact
+          path: target/site/jacoco/      # dossier du rapport HTML JaCoCo
+
+  # ---------------------------------------------------------------------------
+  # JOB 2 : construire l'image Docker et la publier sur Docker Hub
+  # ---------------------------------------------------------------------------
+  docker:                                # identifiant du job
+    name: Build & Push Docker Image      # nom lisible affiché dans GitHub
+    needs: build-test                    # attend la réussite du job 1 : si les tests échouent, il ne démarre pas
+    runs-on: ubuntu-latest               # nouveau runner, indépendant de celui du job 1
+    # Condition : seulement sur un push vers main (jamais sur une pull request)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:                               # étapes du job
+
+      # Récupérer le code (le job 1 tourne sur une autre machine : il faut recloner)
+      - name: Checkout du code           # libellé de l'étape
+        uses: actions/checkout@v4        # même Action de clonage
+
+      # Préparer le moteur de build Docker moderne (nécessaire au cache et à build-push-action)
+      - name: Configurer Docker Buildx   # libellé de l'étape
+        uses: docker/setup-buildx-action@v3   # Action officielle d'installation de Buildx
+
+      # S'authentifier auprès de Docker Hub pour pouvoir publier
+      - name: Connexion à Docker Hub     # libellé de l'étape
+        uses: docker/login-action@v3     # Action officielle de connexion à un registre
+        with:                            # paramètres de l'Action
+          username: ${{ secrets.DOCKERHUB_USERNAME }}   # identifiant Docker Hub (Secret GitHub)
+          password: ${{ secrets.DOCKERHUB_TOKEN }}      # Access Token Docker Hub, jamais le mot de passe du compte
+
+      # Construire l'image et la pousser sur Docker Hub
+      - name: Build et push de l'image   # libellé de l'étape
+        uses: docker/build-push-action@v6   # Action officielle de build + push
+        with:                            # paramètres de l'Action
+          context: .                     # dossier envoyé à Docker : la racine du dépôt
+          file: Dockerfile.multistage    # Dockerfile utilisé (build Maven + image d'exécution allégée)
+          push: true                     # publier l'image après le build
+          tags: |                        # liste d'étiquettes, une par ligne
+            ${{ secrets.DOCKERHUB_USERNAME }}/beestore:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/beestore:latest
+          cache-from: type=gha           # réutilise les couches Docker mises en cache par les exécutions précédentes
+          cache-to: type=gha,mode=max    # enregistre toutes les couches dans le cache GitHub pour la prochaine fois
