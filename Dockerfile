@@ -17,9 +17,3 @@ EXPOSE 8080
 
 # Commande de démarrage
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
-# Ajout d'un commentaire pour lancer pipeline github actions
-
-# ceci un autre commentaire pour lancer pipeline github actions
-
-#ceci commentaire pour lancer pipeline github actions
